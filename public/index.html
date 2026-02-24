@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sitemap Tools Suite</title>
+  <meta name="description" content="Convert, analyze, compare and merge XML sitemaps. Professional sitemap toolkit for SEO.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🗺️</text></svg>">
+</head>
+<body>
+  <div class="noise-overlay"></div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-group">
+        <div class="logo-icon">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect x="2" y="2" width="10" height="10" rx="2" fill="var(--accent)" opacity="0.9"/>
+            <rect x="16" y="2" width="10" height="10" rx="2" fill="var(--accent)" opacity="0.5"/>
+            <rect x="2" y="16" width="10" height="10" rx="2" fill="var(--accent)" opacity="0.5"/>
+            <rect x="16" y="16" width="10" height="10" rx="2" fill="var(--accent)" opacity="0.2"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="logo-text">Sitemap Tools</h1>
+          <p class="logo-sub">CONVERT · ANALYZE · COMPARE · MERGE</p>
+        </div>
+      </div>
+      <div class="header-status">
+        <span class="status-dot"></span>
+        <span class="status-text">Ready</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Tab Navigation -->
+  <nav class="tab-nav">
+    <div class="tab-nav-inner">
+      <button class="tab-btn active" data-tab="converter">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Converter
+      </button>
+      <button class="tab-btn" data-tab="analytics">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="8" width="3" height="6" rx="0.5" fill="currentColor" opacity="0.5"/><rect x="6" y="5" width="3" height="9" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="11" y="2" width="3" height="12" rx="0.5" fill="currentColor"/></svg>
+        Analytics
+      </button>
+      <button class="tab-btn" data-tab="csv-to-xml">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 2v12M12 2v12M2 6h12M2 10h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        CSV → XML
+      </button>
+      <button class="tab-btn" data-tab="compare">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h5M9 8h5M7 5l-3 3 3 3M9 5l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Compare
+      </button>
+      <button class="tab-btn" data-tab="merge">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 4h4M3 8h10M3 12h4M9 4l5 4-5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Merge
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- ========== CONVERTER TAB ========== -->
+    <section class="tab-panel active" id="panel-converter">
+      <div class="panel-grid">
+        <!-- Input Section -->
+        <div class="panel-card">
+          <div class="card-header">
+            <h2>Input Sitemap</h2>
+            <div class="input-toggle">
+              <button class="toggle-btn active" data-input="file">File Upload</button>
+              <button class="toggle-btn" data-input="url">From URL</button>
+            </div>
+          </div>
+
+          <!-- File Upload -->
+          <div class="input-section active" id="input-file">
+            <div class="drop-zone" id="converter-dropzone">
+              <div class="drop-zone-content">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                  <path d="M20 6v20M12 14l8-8 8 8" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M6 26v4a4 4 0 004 4h20a4 4 0 004-4v-4" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <p class="drop-text">Drop your <strong>sitemap.xml</strong> here</p>
+                <p class="drop-hint">or click to browse files</p>
+              </div>
+              <input type="file" id="converter-file-input" accept=".xml" hidden>
+            </div>
+          </div>
+
+          <!-- URL Input -->
+          <div class="input-section" id="input-url">
+            <div class="url-input-group">
+              <input type="url" id="sitemap-url" placeholder="https://example.com/sitemap.xml" class="text-input">
+              <button id="fetch-url-btn" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M10 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Fetch
+              </button>
+            </div>
+            <p class="input-hint">Supports sitemap.xml and sitemap index files</p>
+          </div>
+
+          <!-- File Info -->
+          <div class="file-info hidden" id="converter-file-info">
+            <div class="file-info-row">
+              <span class="file-label">File:</span>
+              <span class="file-value" id="file-name">—</span>
+            </div>
+            <div class="file-info-row">
+              <span class="file-label">URLs found:</span>
+              <span class="file-value mono" id="url-count">0</span>
+            </div>
+            <div class="file-info-row">
+              <span class="file-label">Type:</span>
+              <span class="file-value" id="sitemap-type">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export Section -->
+        <div class="panel-card">
+          <div class="card-header">
+            <h2>Export Data</h2>
+          </div>
+          <div class="export-grid" id="export-section">
+            <button class="export-btn" data-format="csv" disabled>
+              <div class="export-icon">CSV</div>
+              <span>Comma Separated</span>
+            </button>
+            <button class="export-btn" data-format="json" disabled>
+              <div class="export-icon">JSON</div>
+              <span>Structured Data</span>
+            </button>
+            <button class="export-btn" data-format="xls" disabled>
+              <div class="export-icon">XLS</div>
+              <span>Excel Spreadsheet</span>
+            </button>
+            <button class="export-btn" data-format="xml" disabled>
+              <div class="export-icon">XML</div>
+              <span>Regenerate Sitemap</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Preview -->
+      <div class="panel-card hidden" id="data-preview-card">
+        <div class="card-header">
+          <h2>Data Preview</h2>
+          <div class="preview-pagination">
+            <button class="btn btn-sm" id="prev-page" disabled>← Prev</button>
+            <span class="page-info" id="page-info">Page 1 of 1</span>
+            <button class="btn btn-sm" id="next-page" disabled>Next →</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table" id="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>URL</th>
+                <th>Last Modified</th>
+                <th>Change Freq</th>
+                <th>Priority</th>
+              </tr>
+            </thead>
+            <tbody id="data-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== ANALYTICS TAB ========== -->
+    <section class="tab-panel" id="panel-analytics">
+      <div class="empty-state" id="analytics-empty">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="4" y="24" width="8" height="18" rx="1" fill="var(--accent)" opacity="0.3"/><rect x="16" y="16" width="8" height="26" rx="1" fill="var(--accent)" opacity="0.5"/><rect x="28" y="8" width="8" height="34" rx="1" fill="var(--accent)" opacity="0.7"/><rect x="40" y="4" width="4" height="38" rx="1" fill="var(--accent)"/></svg>
+        <h3>No Data Yet</h3>
+        <p>Load a sitemap in the Converter tab to see analytics</p>
+      </div>
+
+      <div class="hidden" id="analytics-content">
+        <!-- Top Stats -->
+        <div class="stats-row" id="stats-top"></div>
+
+        <div class="analytics-grid">
+          <!-- Field Coverage -->
+          <div class="panel-card">
+            <div class="card-header"><h2>Field Coverage</h2></div>
+            <div id="field-coverage"></div>
+          </div>
+
+          <!-- Change Frequency -->
+          <div class="panel-card">
+            <div class="card-header"><h2>Change Frequency</h2></div>
+            <div id="change-freq-chart"></div>
+          </div>
+
+          <!-- Priority Distribution -->
+          <div class="panel-card">
+            <div class="card-header"><h2>Priority Distribution</h2></div>
+            <div id="priority-chart"></div>
+          </div>
+
+          <!-- Top Domains -->
+          <div class="panel-card">
+            <div class="card-header"><h2>Top Domains</h2></div>
+            <div id="top-domains"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== CSV TO XML TAB ========== -->
+    <section class="tab-panel" id="panel-csv-to-xml">
+      <div class="panel-grid single">
+        <div class="panel-card">
+          <div class="card-header">
+            <h2>CSV to Sitemap XML</h2>
+          </div>
+          <p class="card-desc">Upload a CSV file with columns: <code>URL</code>, <code>Last Modified</code>, <code>Change Frequency</code>, <code>Priority</code></p>
+
+          <div class="drop-zone" id="csv-dropzone">
+            <div class="drop-zone-content">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <path d="M20 6v20M12 14l8-8 8 8" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M6 26v4a4 4 0 004 4h20a4 4 0 004-4v-4" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <p class="drop-text">Drop your <strong>.csv</strong> file here</p>
+              <p class="drop-hint">or click to browse</p>
+            </div>
+            <input type="file" id="csv-file-input" accept=".csv" hidden>
+          </div>
+
+          <div class="hidden" id="csv-info">
+            <div class="file-info">
+              <div class="file-info-row">
+                <span class="file-label">File:</span>
+                <span class="file-value" id="csv-file-name">—</span>
+              </div>
+              <div class="file-info-row">
+                <span class="file-label">Valid URLs:</span>
+                <span class="file-value mono" id="csv-url-count">0</span>
+              </div>
+              <div class="file-info-row">
+                <span class="file-label">Errors:</span>
+                <span class="file-value mono" id="csv-error-count">0</span>
+              </div>
+            </div>
+            <div class="error-list hidden" id="csv-errors"></div>
+            <button class="btn btn-primary btn-block" id="convert-csv-btn">
+              Convert to Sitemap XML
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== COMPARE TAB ========== -->
+    <section class="tab-panel" id="panel-compare">
+      <div class="panel-grid">
+        <div class="panel-card">
+          <div class="card-header"><h2>Old Sitemap</h2></div>
+          <div class="drop-zone compact" id="compare-drop-old">
+            <div class="drop-zone-content">
+              <p class="drop-text">Drop <strong>old</strong> sitemap.xml</p>
+              <p class="drop-hint">or click to browse</p>
+            </div>
+            <input type="file" id="compare-old-input" accept=".xml" hidden>
+          </div>
+          <div class="file-info hidden" id="compare-old-info">
+            <div class="file-info-row">
+              <span class="file-label">File:</span>
+              <span class="file-value" id="compare-old-name">—</span>
+            </div>
+            <div class="file-info-row">
+              <span class="file-label">URLs:</span>
+              <span class="file-value mono" id="compare-old-count">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="card-header"><h2>New Sitemap</h2></div>
+          <div class="drop-zone compact" id="compare-drop-new">
+            <div class="drop-zone-content">
+              <p class="drop-text">Drop <strong>new</strong> sitemap.xml</p>
+              <p class="drop-hint">or click to browse</p>
+            </div>
+            <input type="file" id="compare-new-input" accept=".xml" hidden>
+          </div>
+          <div class="file-info hidden" id="compare-new-info">
+            <div class="file-info-row">
+              <span class="file-label">File:</span>
+              <span class="file-value" id="compare-new-name">—</span>
+            </div>
+            <div class="file-info-row">
+              <span class="file-label">URLs:</span>
+              <span class="file-value mono" id="compare-new-count">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-bar">
+        <button class="btn btn-primary btn-lg" id="compare-btn" disabled>
+          Compare Sitemaps
+        </button>
+      </div>
+
+      <div class="hidden" id="compare-results">
+        <div class="stats-row" id="compare-stats"></div>
+
+        <div class="panel-card">
+          <div class="card-header">
+            <h2>Comparison Details</h2>
+            <button class="btn btn-sm" id="download-compare-report">Download Report</button>
+          </div>
+          <div class="compare-sections" id="compare-details"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== MERGE TAB ========== -->
+    <section class="tab-panel" id="panel-merge">
+      <div class="panel-grid single">
+        <div class="panel-card">
+          <div class="card-header"><h2>Merge Sitemaps</h2></div>
+          <p class="card-desc">Upload multiple sitemap XML files to combine them into one.</p>
+
+          <div class="drop-zone" id="merge-dropzone">
+            <div class="drop-zone-content">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <path d="M20 6v20M12 14l8-8 8 8" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M6 26v4a4 4 0 004 4h20a4 4 0 004-4v-4" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <p class="drop-text">Drop multiple <strong>sitemap.xml</strong> files</p>
+              <p class="drop-hint">or click to browse</p>
+            </div>
+            <input type="file" id="merge-file-input" accept=".xml" multiple hidden>
+          </div>
+
+          <div class="hidden" id="merge-file-list"></div>
+
+          <div class="merge-options hidden" id="merge-options">
+            <label class="checkbox-label">
+              <input type="checkbox" id="merge-dedup" checked>
+              <span>Remove duplicate URLs</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="merge-sort">
+              <span>Sort by priority (highest first)</span>
+            </label>
+          </div>
+
+          <button class="btn btn-primary btn-block hidden" id="merge-btn">
+            Merge Sitemaps
+          </button>
+
+          <div class="hidden" id="merge-results">
+            <div class="file-info">
+              <div class="file-info-row">
+                <span class="file-label">Total input URLs:</span>
+                <span class="file-value mono" id="merge-total">0</span>
+              </div>
+              <div class="file-info-row">
+                <span class="file-label">Unique URLs:</span>
+                <span class="file-value mono" id="merge-unique">0</span>
+              </div>
+              <div class="file-info-row">
+                <span class="file-label">Duplicates removed:</span>
+                <span class="file-value mono" id="merge-dupes">0</span>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-block" id="download-merged">
+              Download Merged Sitemap
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Toast Notification -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay hidden" id="loading">
+    <div class="spinner"></div>
+    <p class="loading-text">Processing...</p>
+  </div>
+
+  <footer class="site-footer">
+    <p>Sitemap Tools Suite — Open source sitemap toolkit</p>
+  </footer>
+
+  <script src="/js/parser.js"></script>
+  <script src="/js/converter.js"></script>
+  <script src="/js/analytics.js"></script>
+  <script src="/js/comparer.js"></script>
+  <script src="/js/merger.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "sitemap-tools-suite",
+  "version": "1.0.0",
+  "description": "A comprehensive web application suite for sitemap conversion, analysis, comparison, and management.",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve public -l 3000",
+    "start": "npx serve public -l 3000"
+  },
+  "license": "MIT"
+}
