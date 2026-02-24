@@ -1,5 +1,6 @@
 const https = require('https');
 const http = require('http');
+const zlib = require('zlib');
 const { URL } = require('url');
 
 // SSRF protection: block private/internal IPs
@@ -11,7 +12,7 @@ function isPrivateIP(hostname) {
     /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
     /^192\.168\./,
     /^0\./,
-    /^169\.254\./,      // link-local
+    /^169\.254\./,
     /^::1$/,
     /^fc00:/i,
     /^fe80:/i,
@@ -20,7 +21,7 @@ function isPrivateIP(hostname) {
   return privatePatterns.some(p => p.test(hostname));
 }
 
-function fetchURL(url, maxRedirects = 3) {
+function fetchURL(url, maxRedirects = 5) {
   return new Promise((resolve, reject) => {
     if (maxRedirects < 0) {
       return reject(new Error('Too many redirects'));
@@ -47,12 +48,20 @@ function fetchURL(url, maxRedirects = 3) {
       timeout: 15000,
       headers: {
         'User-Agent': 'SitemapToolsSuite/1.0',
-        'Accept': 'application/xml, text/xml, */*'
+        'Accept': 'application/xml, text/xml, */*',
+        'Accept-Encoding': 'gzip, deflate'
       }
     }, (res) => {
-      // Handle redirects
+      // Handle redirects — resolve relative URLs against the request URL
       if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
-        return fetchURL(res.headers.location, maxRedirects - 1).then(resolve).catch(reject);
+        let redirectUrl;
+        try {
+          // Handles both absolute and relative redirect URLs
+          redirectUrl = new URL(res.headers.location, url).href;
+        } catch {
+          return reject(new Error('Invalid redirect URL'));
+        }
+        return fetchURL(redirectUrl, maxRedirects - 1).then(resolve).catch(reject);
       }
 
       if (res.statusCode !== 200) {
@@ -65,10 +74,21 @@ function fetchURL(url, maxRedirects = 3) {
         return reject(new Error('File too large (max 50MB)'));
       }
 
+      // Decompress if gzipped or deflated
+      let stream = res;
+      const encoding = (res.headers['content-encoding'] || '').toLowerCase();
+      if (encoding === 'gzip') {
+        stream = res.pipe(zlib.createGunzip());
+      } else if (encoding === 'deflate') {
+        stream = res.pipe(zlib.createInflate());
+      } else if (encoding === 'br') {
+        stream = res.pipe(zlib.createBrotliDecompress());
+      }
+
       const chunks = [];
       let totalSize = 0;
 
-      res.on('data', (chunk) => {
+      stream.on('data', (chunk) => {
         totalSize += chunk.length;
         if (totalSize > 50 * 1024 * 1024) {
           req.destroy();
@@ -77,8 +97,12 @@ function fetchURL(url, maxRedirects = 3) {
         chunks.push(chunk);
       });
 
-      res.on('end', () => {
+      stream.on('end', () => {
         resolve(Buffer.concat(chunks).toString('utf-8'));
+      });
+
+      stream.on('error', (err) => {
+        reject(new Error(`Decompression error: ${err.message}`));
       });
     });
 
@@ -115,10 +139,15 @@ module.exports = async (req, res) => {
   }
 
   // Validate URL
+  let parsedUrl;
   try {
-    new URL(url);
+    parsedUrl = new URL(url);
   } catch {
     return res.status(400).json({ success: false, error: 'Invalid URL format' });
+  }
+
+  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+    return res.status(400).json({ success: false, error: 'Only HTTP/HTTPS URLs are supported' });
   }
 
   try {
