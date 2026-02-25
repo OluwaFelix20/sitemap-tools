@@ -50,6 +50,64 @@
     });
   }
 
+  /**
+   * Smart URL normalization — if user enters a bare domain,
+   * try common sitemap paths automatically.
+   */
+  function normalizeSitemapUrl(input) {
+    let url = input.trim();
+
+    // Add protocol if missing
+    if (!/^https?:\/\//i.test(url)) {
+      url = 'https://' + url;
+    }
+
+    try {
+      const parsed = new URL(url);
+      // If it's just a domain with no path (or just '/'), append /sitemap.xml
+      if (parsed.pathname === '/' || parsed.pathname === '') {
+        return {
+          primary: parsed.origin + '/sitemap.xml',
+          fallbacks: [
+            parsed.origin + '/sitemap_index.xml',
+            parsed.origin + '/sitemap/',
+          ],
+          wasBareDomain: true
+        };
+      }
+      return { primary: url, fallbacks: [], wasBareDomain: false };
+    } catch {
+      return { primary: url, fallbacks: [], wasBareDomain: false };
+    }
+  }
+
+  /**
+   * Fetch sitemap via API with better error handling
+   */
+  async function fetchSitemapFromAPI(url) {
+    const resp = await fetch('/api/fetch-sitemap', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+
+    // Handle non-JSON responses (e.g., Vercel 404 HTML page)
+    const contentType = resp.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      if (resp.status === 404) {
+        throw new Error('API endpoint not found. The serverless function may not be deployed correctly.');
+      }
+      throw new Error(`Unexpected response from API (HTTP ${resp.status}). Check your deployment.`);
+    }
+
+    const data = await resp.json();
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to fetch sitemap');
+    }
+
+    return data.data;
+  }
+
   // ===== TAB NAVIGATION =====
   $$('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -104,6 +162,21 @@
   // ===== CONVERTER TAB =====
   async function processXML(xmlText, sourceName) {
     try {
+      // Pre-validate: check if the content looks like XML
+      const trimmed = xmlText.trimStart();
+      if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || trimmed.startsWith('<HTML')) {
+        throw new Error(
+          'Received an HTML page instead of a sitemap XML. ' +
+          'The URL may be incorrect, or the site may be blocking automated requests.'
+        );
+      }
+
+      if (!trimmed.startsWith('<')) {
+        throw new Error(
+          'The response is not valid XML. It may be plain text, JSON, or an unsupported format.'
+        );
+      }
+
       const result = SitemapParser.parse(xmlText);
 
       if (result.type === 'index') {
@@ -111,29 +184,33 @@
         setStatus(`Fetching ${result.sitemaps.length} sitemaps...`);
 
         let allEntries = [];
+        let fetchErrors = 0;
+
         for (const sm of result.sitemaps) {
           try {
             showLoading(`Fetching ${sm.loc}...`);
-            const resp = await fetch('/api/fetch-sitemap', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ url: sm.loc })
-            });
-            const data = await resp.json();
-            if (data.success) {
-              const subResult = SitemapParser.parse(data.data);
-              if (subResult.type === 'sitemap') {
-                allEntries = allEntries.concat(subResult.entries);
-              }
+            const subXml = await fetchSitemapFromAPI(sm.loc);
+            const subResult = SitemapParser.parse(subXml);
+            if (subResult.type === 'sitemap') {
+              allEntries = allEntries.concat(subResult.entries);
             }
           } catch (err) {
             console.warn(`Failed to fetch sub-sitemap: ${sm.loc}`, err);
+            fetchErrors++;
           }
         }
 
         state.entries = allEntries;
+
+        if (fetchErrors > 0) {
+          showToast(`Warning: ${fetchErrors} sub-sitemap(s) failed to load`, 'error');
+        }
       } else {
         state.entries = result.entries;
+      }
+
+      if (state.entries.length === 0) {
+        throw new Error('No URLs found in the sitemap. The file may be empty or in an unsupported format.');
       }
 
       // Update UI
@@ -199,16 +276,19 @@
     $('#converter-dropzone').classList.add('has-file');
   });
 
-  // URL fetch
+  // URL fetch — with auto-detection and fallbacks
   $('#fetch-url-btn').addEventListener('click', async () => {
-    const url = $('#sitemap-url').value.trim();
-    if (!url) {
+    const rawInput = $('#sitemap-url').value.trim();
+    if (!rawInput) {
       showToast('Please enter a URL', 'error');
       return;
     }
 
+    const { primary, fallbacks, wasBareDomain } = normalizeSitemapUrl(rawInput);
+
+    // Validate
     try {
-      new URL(url);
+      new URL(primary);
     } catch {
       showToast('Please enter a valid URL', 'error');
       return;
@@ -217,19 +297,48 @@
     showLoading('Fetching sitemap...');
     setStatus('Fetching...');
 
+    // Try the primary URL first
     try {
-      const resp = await fetch('/api/fetch-sitemap', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
-      });
-      const data = await resp.json();
-      if (!data.success) throw new Error(data.error || 'Failed to fetch sitemap');
-      await processXML(data.data, url);
-    } catch (err) {
+      if (wasBareDomain) {
+        showLoading(`Trying ${primary}...`);
+      }
+      const xmlData = await fetchSitemapFromAPI(primary);
+      await processXML(xmlData, primary);
+      return;
+    } catch (primaryErr) {
+      // If bare domain, try fallbacks before giving up
+      if (wasBareDomain && fallbacks.length > 0) {
+        for (const fallbackUrl of fallbacks) {
+          try {
+            showLoading(`Trying ${fallbackUrl}...`);
+            const xmlData = await fetchSitemapFromAPI(fallbackUrl);
+            await processXML(xmlData, fallbackUrl);
+            return;
+          } catch {
+            // Continue to next fallback
+          }
+        }
+      }
+
+      // All attempts failed
       hideLoading();
-      showToast(err.message, 'error');
+      if (wasBareDomain) {
+        showToast(
+          `Could not find a sitemap at ${rawInput}. Tried /sitemap.xml and /sitemap_index.xml. Please provide the full sitemap URL.`,
+          'error'
+        );
+      } else {
+        showToast(primaryErr.message, 'error');
+      }
       setStatus('Error');
+    }
+  });
+
+  // Allow pressing Enter in the URL input
+  $('#sitemap-url').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      $('#fetch-url-btn').click();
     }
   });
 
