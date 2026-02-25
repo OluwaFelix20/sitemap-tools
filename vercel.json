@@ -1,14 +1,4 @@
 {
-  "rewrites": [
-    {
-      "source": "/api/fetch-sitemap",
-      "destination": "/api/fetch-sitemap.js"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/public/$1"
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",
