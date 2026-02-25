@@ -561,6 +561,32 @@
     showToast('Merged sitemap downloaded', 'success');
   });
 
+  // ===== FOOTER TOOL LINKS =====
+  document.querySelectorAll('.scroll-to-tool').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const tab = link.dataset.tab;
+      if (tab) {
+        $$('.tab-btn').forEach(b => b.classList.remove('active'));
+        $$('.tab-panel').forEach(p => p.classList.remove('active'));
+        const targetBtn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+        if (targetBtn) targetBtn.classList.add('active');
+        const targetPanel = document.getElementById(`panel-${tab}`);
+        if (targetPanel) targetPanel.classList.add('active');
+      }
+      document.getElementById('tools').scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  // Hero CTA scroll
+  const heroBtn = document.getElementById('hero-start-btn');
+  if (heroBtn) {
+    heroBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('tools').scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
   // ===== INIT =====
   setStatus('Ready');
 
