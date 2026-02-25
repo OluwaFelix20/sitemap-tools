@@ -56,12 +56,19 @@ function fetchURL(url, maxRedirects = 5) {
       if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
         let redirectUrl;
         try {
-          // Handles both absolute and relative redirect URLs
           redirectUrl = new URL(res.headers.location, url).href;
         } catch {
           return reject(new Error('Invalid redirect URL'));
         }
         return fetchURL(redirectUrl, maxRedirects - 1).then(resolve).catch(reject);
+      }
+
+      if (res.statusCode === 404) {
+        return reject(new Error('Sitemap not found (404). Check the URL path.'));
+      }
+
+      if (res.statusCode === 403) {
+        return reject(new Error('Access denied (403). The server blocked the request.'));
       }
 
       if (res.statusCode !== 200) {
@@ -98,7 +105,30 @@ function fetchURL(url, maxRedirects = 5) {
       });
 
       stream.on('end', () => {
-        resolve(Buffer.concat(chunks).toString('utf-8'));
+        const body = Buffer.concat(chunks).toString('utf-8');
+
+        // Validate: check if response looks like XML
+        const trimmed = body.trimStart();
+        if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || trimmed.startsWith('<HTML')) {
+          return reject(new Error(
+            'The URL returned an HTML page instead of XML. ' +
+            'Make sure the URL points to a sitemap.xml file.'
+          ));
+        }
+
+        if (!trimmed.startsWith('<?xml') && !trimmed.startsWith('<urlset') && !trimmed.startsWith('<sitemapindex')) {
+          // Could still be valid XML without declaration, but warn if it looks wrong
+          if (trimmed.length === 0) {
+            return reject(new Error('The URL returned an empty response.'));
+          }
+          if (!trimmed.startsWith('<')) {
+            return reject(new Error(
+              'The URL did not return valid XML. The response may be plain text, JSON, or another format.'
+            ));
+          }
+        }
+
+        resolve(body);
       });
 
       stream.on('error', (err) => {
